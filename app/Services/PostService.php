@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Http\Resources\PostResource;
+use App\Models\Post;
 use App\Repositories\PostRepository;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,7 +15,8 @@ class PostService
     public function createPost($request)
     {
         $user = $request->user();
-        $post = $this->postRepo->create($user, $request->validated());
+        $post = $user->posts()->create($request->validated());
+
         return response()->json([
             'message' => 'Post created successfully.',
             'post' => $post,
@@ -28,9 +31,10 @@ class PostService
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
+        $post->update($request->validated());
         return response()->json([
             'message' => 'Post Updated successfully.',
-            'post' => $this->postRepo->update($post, $request->validated()),
+            'post' => $post ,
         ], 200);
     }
     public function deletePost($post)
@@ -39,7 +43,6 @@ class PostService
         if ($post->user_id !== $user->id) {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
-
         $post->delete();
         return response()->json(['message' => 'Post deleted successfully.'], 200);
     }
@@ -47,13 +50,13 @@ class PostService
 
     public function getAllPosts()
     {
-        $posts = $this->postRepo->getPosts();
-        return response()->json($posts, 200);
+        $posts = Post::paginate(10);
+        return PostResource::collection($posts);
     }
 
     public function getPost($post)
     {
-        return response()->json($post, 200);
+        return new PostResource($post);
     }
 
     public function likePost($post)
@@ -62,7 +65,7 @@ class PostService
         if ($post->isLikedBy($user)) {
             return response()->json(['message' => 'You have already liked this post.'], 400);
         }
-        $this->postRepo->likePost($user, $post);
+        $post->likedBy($user);
         return response()->json(['message' => 'Post liked successfully.'], 200);
     }
 
@@ -72,7 +75,7 @@ class PostService
         if (! $post->isLikedBy($user) ) {
             return response()->json(['message' => 'You have not liked this post.'], 400);
         }
-        $this->postRepo->unlikePost($user, $post);
+        $post->dislikedBy($user);
         return response()->json(['message' => 'Post unliked successfully.'], 200);
     }
 

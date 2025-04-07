@@ -18,20 +18,6 @@ trait HasComments
         });
     }
 
-    public function commentedBy(User $user, string $content): void
-    {
-        $this->comments()->create([
-            'user_id' => $user->id,
-            'content' => $content,
-        ]);
-        $this->unsetRelation('comments');
-    }
-
-    public function isCommentedBy(User $user): bool
-    {
-        return $this->comments()->where('user_id', $user->id)->exists();
-    }
-
     public function comments(): MorphMany
     {
         return $this->morphMany(Comment::class, 'commentable');

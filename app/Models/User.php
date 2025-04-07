@@ -36,7 +36,7 @@ class User extends Authenticatable
         'email_verified_at',
     ];
 
-    protected $appends = ['followers_count', 'following_count'];
+    // protected $appends = ['followers_count', 'following_count'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -46,6 +46,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'pivot',
     ];
 
     /**
@@ -64,12 +65,14 @@ class User extends Authenticatable
     public function followers()
     {
         return $this->belongsToMany(User::class, 'followers', 'following_id', 'follower_id')
+            ->select('id', 'username', 'email', 'profile_image', 'verified')
             ->withTimestamps();
     }
 
     public function following()
     {
         return $this->belongsToMany(User::class, 'followers', 'follower_id', 'following_id')
+            ->select('id', 'username', 'email', 'profile_image', 'verified')
             ->withTimestamps();
     }
 
@@ -83,17 +86,6 @@ class User extends Authenticatable
     public function posts()
     {
         return $this->hasMany(Post::class);
-    }
-
-
-    public function getFollowersCountAttribute(): int
-    {
-        return $this->followers()->count();
-    }
-
-    public function getFollowingCountAttribute(): int
-    {
-        return $this->following()->count();
     }
 
     public function isFollowing(User $user): bool

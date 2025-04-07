@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Http\Resources\CommentResource;
 use App\Repositories\CommentRepository;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,9 +27,8 @@ class CommentService
 
     public function getPostComments($post)
     {
-        $user = Auth::user();
-        $comments = $post->comments()->with('user')->paginate(20);
-        return response()->json($comments, 200);
+        $comments = $post->comments()->paginate(10);
+        return CommentResource::collection($comments);
     }
 
     public function updateComment($request, $comment)
@@ -63,8 +63,7 @@ class CommentService
         if ($comment->isLikedBy($user)) {
             return response()->json(['message' => 'You have already liked this comment.'], 400);
         }
-
-        $this->commentRepo->likeComment($user, $comment);
+        $comment->likedBy($user);
         return response()->json(['message' => 'Comment liked successfully.'], 200);
     }
 
@@ -74,7 +73,22 @@ class CommentService
         if (! $comment->isLikedBy($user)) {
             return response()->json(['message' => 'You have not liked this comment.'], 400);
         }
-        $this->commentRepo->unlikeComment($user, $comment);
+        $comment->dislikedBy($user);
         return response()->json(['message' => 'Comment unliked successfully.'], 200);
+    }
+
+    public function replyToComment($request, $comment)
+    {
+        $user = Auth::user();
+        $reply = $comment->comments()->create([
+            'user_id' => $user->id,
+            'content' => $request->input('content'),
+            'parent_id' => $comment->id,
+        ]);
+        // $comment->replies()->save($reply);
+        return response()->json([
+            'message' => 'Reply added successfully.',
+            'reply' => $reply,
+        ], 201);
     }
 }

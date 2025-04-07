@@ -4,11 +4,12 @@ namespace App\Models;
 
 use App\Concerns\HasComments;
 use App\Concerns\HasLikes;
+use App\Concerns\HasMentions;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
 {
-    use HasComments, HasLikes;
+    use HasComments, HasLikes, HasMentions;
 
     protected $fillable = [
         'user_id',
@@ -21,17 +22,13 @@ class Post extends Model
     ];
 
     protected $with = [
-        'likers',
-    ];
-
-    protected $appends = [
-        'likes_count',
-        'comments_count',
+        'likers','comments'
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)
+        ->select('id','profile_image','username');
     }
 
     public function getLikesCountAttribute()
@@ -41,6 +38,21 @@ class Post extends Model
 
     public function getCommentsCountAttribute()
     {
-        return $this->comments()->count();
+        return $this->comments()->with(['replies' => function ($query) {
+            $query->withCount('replies');
+        }])->get()->sum(function ($comment) {
+            return 1 + $this->countReplies($comment);
+        });
+    }
+
+    protected function countReplies($comment)
+    {
+        if ($comment->replies->isEmpty()) {
+            return 0;
+        }
+
+        return $comment->replies->sum(function ($reply) {
+            return 1 + $this->countReplies($reply);
+        });
     }
 }

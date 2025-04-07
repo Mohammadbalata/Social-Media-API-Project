@@ -42,4 +42,9 @@ class CommentsController extends Controller
         return $this->service->unlikeComment($comment);
     }
 
+    public function replyToComment(CommentRequest $request, Comment $comment)
+    {
+        return $this->service->replyToComment($request, $comment);
+    }
+
 }

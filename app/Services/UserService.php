@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Repositories\PostRepository;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Auth;
 
@@ -11,13 +11,20 @@ class UserService
 {
     public function __construct(
         protected UserRepository $userRepo,
-        protected PostRepository $postRepo
     ) {}
 
     public function searchUser($request)
     {
         $search = $request->input('search');
-        $query = $this->userRepo->searchUser($search);
+        $query = User::query();
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('username', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        $query->select('id', 'username', 'email', 'profile_image', 'verified');
+
         $users = $query->paginate(10);
 
         return response()->json($users, 200);
@@ -25,21 +32,21 @@ class UserService
 
     public function getUserData($user)
     {
-        $user->load('posts');
-        return response()->json($user, 200);
+        return new UserResource($user);
     }
 
     public function updateUser($request, $user)
     {
+        $user->update($request->validated());
         return response()->json([
             'message' => 'User updated successfully.',
-            'user' => $this->userRepo->update($user, $request->validated())
+            'user' => $user
         ], 200);
     }
 
     public function getUserFollowers($user)
     {
-        $followers = $user->followers()->paginate(20);
+        $followers = $user->followers()->paginate(10);
         return response()->json($followers, 200);
     }
 
@@ -51,7 +58,7 @@ class UserService
 
     public function followUser($user)
     {
-        $authUser = $this->userRepo->findById(Auth::id());
+        $authUser = User::find(Auth::id());
 
         if ($authUser->id === $user->id) {
             return response()->json(['message' => 'You cannot follow yourself.'], 400);
@@ -61,13 +68,13 @@ class UserService
             return response()->json(['message' => 'You are already following this user.'], 400);
         }
 
-        $this->userRepo->followUser($authUser, $user);
+        $authUser->following()->attach($user);
         return response()->json(['message' => 'success'], 200);
     }
 
     public function unfollowUser($user)
     {
-        $authUser = $this->userRepo->findById(Auth::id());
+        $authUser = User::find(Auth::id());
         if ($authUser->id === $user->id) {
             return response()->json(['message' => 'You cannot unfollow yourself.'], 400);
         }
@@ -75,13 +82,13 @@ class UserService
         if (! $authUser->isFollowing($user)) {
             return response()->json(['message' => 'You are not following this user.'], 400);
         }
-        $this->userRepo->unfollowUser($authUser, $user);
+        $authUser->following()->detach($user);
         return response()->json(['message' => 'Successfully unfollowed the user.'], 200);
     }
 
     public function blockUser($user)
     {
-        $authUser = $this->userRepo->findById(Auth::id());
+        $authUser = User::find(Auth::id());
         if ($authUser->id === $user->id) {
             return response()->json(['message' => 'You cannot block yourself.'], 400);
         }
@@ -95,17 +102,17 @@ class UserService
         }
 
         if ($authUser->isFollowing($user)) {
-            $this->userRepo->unfollowUser($authUser, $user);
+            $authUser->following()->detach($user);
         }
 
-        $this->userRepo->blockUser($authUser, $user);
+        $authUser->blockedUsers()->attach($user);
 
         return response()->json(['message' => 'Successfully blocked the user.'], 200);
     }
 
     public function unblockUser($user)
     {
-        $authUser = $this->userRepo->findById(Auth::id());
+        $authUser = User::find(Auth::id());
         if ($authUser->id === $user->id) {
             return response()->json(['message' => 'You cannot unblock yourself.'], 400);
         }
@@ -114,7 +121,7 @@ class UserService
             return response()->json(['message' => 'You have not blocked this user.'], 400);
         }
 
-        $this->userRepo->unblockUser($authUser, $user);
+        $authUser->blockedUsers()->detach($user);
         return response()->json(['message' => 'Successfully unblocked the user.'], 200);
     }
 }

@@ -6,7 +6,7 @@ namespace App\Repositories;
 use App\Models\Post;
 use App\Models\User;
 
-class PostRepository
+class PostRepository 
 {
 
     public function getUserPosts(User $user)
@@ -36,6 +36,11 @@ class PostRepository
     {
         $post->update($data);
         return $post;
+    }
+
+    public function delete($post)
+    {
+        $post->delete();
     }
 
     public function likePost($user,$post)
