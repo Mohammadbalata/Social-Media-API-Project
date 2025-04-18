@@ -24,11 +24,23 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'username' => fake()->userName(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'username' => $this->faker->unique()->userName,
+            'email' => $this->faker->unique()->safeEmail,
+            'password' => Hash::make('password'), // Default password is 'password'
+            'bio' => $this->faker->optional()->sentence,
+            'avatar' => $this->faker->optional()->imageUrl(200, 200, 'people'),
+            'website' => $this->faker->optional()->url,
+            'location' => $this->faker->optional()->city,
+            'birthdate' => $this->faker->optional()->date(),
+            'gender' => $this->faker->optional()->randomElement(['male', 'female', 'other']),
+            'is_private' => $this->faker->boolean(20), // 20% chance of being true
+            'verified' => $this->faker->boolean(70), // 70% chance of being true
+            'status' => $this->faker->randomElement(['active', 'suspended', 'deleted']),
+            'last_seen' => $this->faker->dateTimeBetween('-1 month', 'now'),
+            'email_verified_at' => $this->faker->optional(70)->dateTimeBetween('-1 year', 'now'), // 70% chance of being verified
             'remember_token' => Str::random(10),
+            'created_at' => $this->faker->dateTimeBetween('-2 years', 'now'),
+            'updated_at' => $this->faker->dateTimeBetween('-2 years', 'now'),
         ];
     }
 

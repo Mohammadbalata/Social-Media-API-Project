@@ -16,8 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); 
             $table->string('title')->nullable(); 
             $table->text('content')->nullable(); 
-            $table->enum('type', ['text', 'image', 'video'])->default('text'); 
-            $table->enum('privacy', ['public', 'followers', 'private'])->default('public'); 
+            $table->enum('status', ['public', 'archived', 'private'])->default('public'); 
             $table->boolean('is_pinned')->default(false); 
             $table->boolean('is_deleted')->default(false); 
             $table->integer('likes')->default(0); 

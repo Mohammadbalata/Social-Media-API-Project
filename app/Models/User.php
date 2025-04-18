@@ -24,13 +24,13 @@ class User extends Authenticatable
         'email',
         'password',
         'bio',
-        'profile_image',
+        'avatar',
         'website',
         'location',
         'birthdate',
         'gender',
         'is_private',
-        'verified',
+        'is_verified',
         'status',
         'last_seen',
         'email_verified_at',
@@ -59,26 +59,33 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_verified' => 'boolean',
         ];
     }
 
     public function followers()
     {
         return $this->belongsToMany(User::class, 'followers', 'following_id', 'follower_id')
-            ->select('id', 'username', 'email', 'profile_image', 'verified')
+            ->select('id', 'username', 'email', 'avatar', 'verified')
             ->withTimestamps();
     }
 
     public function following()
     {
         return $this->belongsToMany(User::class, 'followers', 'follower_id', 'following_id')
-            ->select('id', 'username', 'email', 'profile_image', 'verified')
+            ->select('id', 'username', 'email', 'avatar', 'verified')
             ->withTimestamps();
     }
 
     public function blockedUsers()
     {
         return $this->belongsToMany(User::class, 'blocked_users', 'user_id', 'blocked_user_id')
+            ->withTimestamps();
+    }
+
+    public function blockedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'blocked_users', 'blocked_user_id', 'user_id')
             ->withTimestamps();
     }
 
@@ -93,7 +100,7 @@ class User extends Authenticatable
         return $this->following()->where('id', $user->id)->exists();
     }
 
-    public function isBlocked(User $user): bool
+    public function isBlockedBy(User $user): bool
     {
         return $this->blockedUsers()->where('id', $user->id)->exists();
     }

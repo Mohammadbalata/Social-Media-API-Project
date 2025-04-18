@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Users;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateUserRequest;
@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Services\DeepSeekService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class UsersController extends Controller
 {
@@ -30,32 +32,8 @@ class UsersController extends Controller
         return $this->service->updateUser($request, $user);
     }
 
-    public function getUserFollowers(User $user)
+    public function generateBio(Request $request)
     {
-        return $this->service->getUserFollowers($user);
+        return $this->service->generateBio($request);
     }
-
-    public function getUserFollowing(User $user)
-    {
-        return $this->service->getUserFollowing($user);
-    }
-
-    public function followUser(User $user){
-        return $this->service->followUser($user);
-    }
-
-    public function unfollowUser(User $user){
-        return $this->service->unfollowUser($user);
-
-    }
-
-    public function blockUser(User $user){
-        return $this->service->blockUser($user);
-    }
-
-    public function unblockUser(User $user){
-        return $this->service->unblockUser($user);
-
-    }
-
 }

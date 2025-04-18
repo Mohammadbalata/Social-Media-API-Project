@@ -24,6 +24,8 @@ class CommentRequest extends FormRequest
         return [
             'content' => 'required|string|max:1000',
             'parent_id' => 'nullable|exists:comments,id',
+            'media' => 'nullable|array|max:1',
+            'media.*' => 'mimes:jpeg,jpg,png,gif,mp4,mp3,pdf,docx|max:10240',
         ];
     }
 }

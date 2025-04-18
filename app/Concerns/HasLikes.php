@@ -44,6 +44,6 @@ trait HasLikes
     {
         return $this->belongsToMany(User::class, Like::class, 'likeable_id')
             ->where('likeable_type', array_search(static::class, Relation::morphMap()) ?: static::class)
-            ->select('user_id', 'username', 'email','profile_image','verified');
-        }
+            ;
+    }
 }

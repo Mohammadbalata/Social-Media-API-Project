@@ -41,7 +41,6 @@ class ApiHandler extends ExceptionHandler
     protected function errorResponse(string $message, int $statusCode): JsonResponse
     {
         return response()->json([
-            'success' => false,
             'message' => $message,
         ], $statusCode);
     }

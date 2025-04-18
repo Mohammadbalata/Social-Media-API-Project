@@ -25,9 +25,9 @@ class PostRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'type' => 'in:text,image,video',
-            'privacy' => 'in:public,friends,private',
+            'media' => 'nullable|array|max:5',
+            'media.*' => 'mimes:jpeg,jpg,png,gif,mp4,mp3,pdf,docx|max:10240',
+            'status' => 'in:public,archived,private',
         ];
     }
-
 }

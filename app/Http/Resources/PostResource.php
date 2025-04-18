@@ -7,6 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class PostResource extends JsonResource
 {
+
     /**
      * Transform the resource into an array.
      *
@@ -16,20 +17,25 @@ class PostResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user' => $this->user,
+            'user' => [
+                'id' => $this->user->id,
+                'username' => $this->user->username,
+                'avatar' => $this->user->avatar,
+                'is_verified' => $this->user->is_verified
+            ],
             'title' => $this->title,
             'content' => $this->content,
             'type' => $this->type,
-            'privacy' => $this->privacy,
+            'status' => $this->status,
             'is_pinned' => $this->is_pinned,
             'is_deleted' => $this->is_deleted,
-            'likes' => $this->likes,
             'shares' => $this->shares,
-            'likes_count' => $this->likes_count,
-            'comments_count' => $this->comments_count,
-            'likers' => $this->likers,
-            'mentioned_users' => $this->mentionedUsers,
-            'comments' => CommentResource::collection($this->comments),
+            'likes_count' => $this->whenCounted('likes'),
+            'comments_count' => $this->whenCounted('comments'),
+            'likers' => $this->whenLoaded('likers'),
+            'mentions' => $this->whenLoaded('mentionedUsers'),
+            'comments' => CommentResource::collection($this->whenLoaded('comments')),
+            'media' => MediaResource::collection($this->whenLoaded('media')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

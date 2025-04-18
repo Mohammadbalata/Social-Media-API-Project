@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckIfBlocked
@@ -15,7 +16,7 @@ class CheckIfBlocked
      */
     public function handle(Request $request, Closure $next, string $type): Response
     {
-        $user = $request->user();
+        $user  = Auth::guard('sanctum')->user();
         $targetUser = match ($type) {
             'user' => $request->route('user'),
             'post' => $request->route('post')->user,
@@ -26,7 +27,7 @@ class CheckIfBlocked
             return response()->json(['message' => 'Resource not found'], 404);
         }
 
-        if ($targetUser->isBlocked($user) || $user->isBlocked($targetUser)) {
+        if ($user && ($targetUser->isBlockedBy($user) || $user->isBlockedBy($targetUser))) {
             return response()->json(
                 ['message' => "You cannot interact with this {$type} due to blocked relationship"],
                 403

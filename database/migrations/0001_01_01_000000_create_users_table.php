@@ -17,13 +17,13 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->text('bio')->nullable();
-            $table->string('profile_image')->nullable();
+            $table->string('avatar')->nullable();
             $table->string('website')->nullable();
             $table->string('location')->nullable();
             $table->date('birthdate')->nullable();
             $table->enum('gender', ['male', 'female', 'other'])->nullable();
             $table->boolean('is_private')->default(false);
-            $table->boolean('verified')->default(false);
+            $table->boolean('is_verified')->default(false);
             $table->enum('status', ['active', 'suspended', 'deleted'])->default('active');
             $table->timestamp('last_seen')->nullable();
             $table->timestamp('email_verified_at')->nullable();

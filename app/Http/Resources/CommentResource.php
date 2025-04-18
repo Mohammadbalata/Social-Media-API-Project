@@ -16,12 +16,20 @@ class CommentResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user_id' => $this->user_id,
+            'user' => [
+                'id' => $this->user->id,
+                'username' => $this->user->username,
+                'avatar' => $this->user->avatar,
+                'is_verified' => $this->user->is_verified
+            ],
             'content' => $this->content,
             'parent_id' => $this->parent_id,
-            'likes_count' => $this->likes_count,
-            'likers' => $this->likers,
-            'replies' => CommentResource::collection($this->replies),
+            'likes_count' => $this->whenCounted('likes'),
+            'replies_count' => $this->whenCounted('replies'),
+            'likers' => $this->whenLoaded('likers'),
+            'mentions' => $this->whenLoaded('mentionedUsers'),
+            'replies' => CommentResource::collection($this->whenLoaded('replies')),
+            'media' => MediaResource::collection($this->whenLoaded('media')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

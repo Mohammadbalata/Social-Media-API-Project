@@ -2,82 +2,123 @@
 
 namespace App\Services;
 
+use App\Constants\PostConstants;
+use App\Events\ModelLiked;
+use App\Http\Requests\PostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Repositories\PostRepository;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
-class PostService
+class PostService extends BaseService
 {
-    public function __construct(protected PostRepository $postRepo) {}
+    public function __construct(
+        protected MediaService $mediaService,
+        protected PostRepository $postRepo
+    ) {}
 
 
-    public function createPost($request)
+    public function createPost(PostRequest $request)
     {
         $user = $request->user();
         $post = $user->posts()->create($request->validated());
-
+        if ($request->has('media')) {
+            $uplode = $this->mediaService->handleMediaUpload($request->file('media'), $post);
+        }
+        $post->load('media');
         return response()->json([
-            'message' => 'Post created successfully.',
-            'post' => $post,
+            'message' => PostConstants::POST_CREATE_MESSAGE,
+            'data' => PostResource::make($post)
         ], 201);
     }
 
     public function updatePost($request, $post)
     {
 
-        $user = $request->user();
-        if ($post->user_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized.'], 403);
-        }
+        Gate::authorize('update', $post);
 
         $post->update($request->validated());
+        $post->load([
+            'media',
+            'comments'
+        ]);
+
+
         return response()->json([
-            'message' => 'Post Updated successfully.',
-            'post' => $post ,
+            'message' => PostConstants::POST_UPDATE_MESSAGE,
+            'data' => PostResource::make($post)
         ], 200);
     }
+
     public function deletePost($post)
     {
-        $user = Auth::user();
-        if ($post->user_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized.'], 403);
-        }
+        Gate::authorize('delete', $post);
+
         $post->delete();
-        return response()->json(['message' => 'Post deleted successfully.'], 200);
+
+        return response()->json([
+            'message' => PostConstants::POST_DESTROY_MESSAGE
+        ], 200);
     }
 
 
-    public function getAllPosts()
+    public function getFeed()
     {
-        $posts = Post::paginate(10);
-        return PostResource::collection($posts);
+        $user  = Auth::guard('sanctum')->user();
+
+        $posts = Post::visibleTo($user)
+            ->with([
+                'media',
+            ])->paginate(10);
+
+        return response()->json(PostResource::collection($posts), 200);
     }
 
     public function getPost($post)
     {
-        return new PostResource($post);
+        $post->load([
+            'media',
+            'comments'
+        ]);
+
+        return response()->json([
+            'post' => PostResource::make($post),
+        ]);
     }
 
     public function likePost($post)
     {
+
         $user = Auth::user();
         if ($post->isLikedBy($user)) {
-            return response()->json(['message' => 'You have already liked this post.'], 400);
+            return response()->json([
+                'message' => PostConstants::LIKED_POST_ERROR,
+            ], 400);
         }
+
         $post->likedBy($user);
-        return response()->json(['message' => 'Post liked successfully.'], 200);
+        // Dispatch the event to notify the user about the new like
+        ModelLiked::dispatch($user, $post);
+        return response()->json([
+            'message' => PostConstants::LIKED_POST_MESSAGE,
+            'likes_count' => $post->fresh()->likes_count
+        ], 200);
     }
 
     public function unlikePost($post)
     {
         $user = Auth::user();
-        if (! $post->isLikedBy($user) ) {
-            return response()->json(['message' => 'You have not liked this post.'], 400);
+        if (! $post->isLikedBy($user)) {
+            return response()->json([
+                'message' => PostConstants::UNLIKED_POST_ERROR,
+            ], 400);
         }
         $post->dislikedBy($user);
-        return response()->json(['message' => 'Post unliked successfully.'], 200);
-    }
 
-    
+        return response()->json([
+            'message' => PostConstants::UNLIKED_POST_MESSAGE,
+            'likes_count' => $post->fresh()->likes_count
+        ], 200);
+    }
 }

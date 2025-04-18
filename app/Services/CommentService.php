@@ -2,13 +2,18 @@
 
 namespace App\Services;
 
+use App\Constants\CommentConstants;
+use App\Events\CommentCreated;
+use App\Events\ModelLiked;
+use App\Http\Resources\CommentCollection;
 use App\Http\Resources\CommentResource;
 use App\Repositories\CommentRepository;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-
-class CommentService
+ 
+class CommentService extends BaseService
 {
-    public function __construct(protected CommentRepository $commentRepo) {}
+    public function __construct(protected MediaService $mediaService, protected CommentRepository $commentRepo) {}
 
 
     public function addCommentToPost($request, $post)
@@ -17,18 +22,29 @@ class CommentService
         $comment = $post->comments()->create([
             'user_id' => $user->id,
             'content' => $request->input('content'),
-            'parent_id' => $request->input('parent_id'),
         ]);
+
+        if ($request->has('media')) {
+            $uplode = $this->mediaService->handleMediaUpload($request->file('media'), $comment);
+        }
+        CommentCreated::dispatch($user, $comment);
+
+        $comment->load('media','mentionedUsers:id,username');
+        $comment->loadCount('likes');
+        
         return response()->json([
-            'message' => 'Comment added successfully.',
-            'comment' => $comment,
+            'message' => CommentConstants::COMMENT_CREATE_MESSAGE,
+            'data' => CommentResource::make($comment)
         ], 201);
+       
     }
 
     public function getPostComments($post)
     {
-        $comments = $post->comments()->paginate(10);
+        $comments = $post->comments()->paginate(8);
+        
         return CommentResource::collection($comments);
+
     }
 
     public function updateComment($request, $comment)
@@ -39,10 +55,12 @@ class CommentService
         }
 
         $comment->update($request->validated());
+        $comment->load('media','replies');
         return response()->json([
-            'message' => 'Comment updated successfully.',
-            'comment' => $comment,
+            'message' => CommentConstants::COMMENT_UPDATE_MESSAGE,
+            'data' => CommentResource::make($comment)
         ], 200);
+
     }
 
     public function deleteComment($comment)
@@ -53,28 +71,55 @@ class CommentService
         }
 
         $comment->delete();
-        return response()->json(['message' => 'Comment deleted successfully.'], 200);
+       
+        return response()->json([
+            'message' => CommentConstants::COMMENT_DESTROY_MESSAGE,
+        ], 200);
+    }
+
+    public function getComment($comment)
+    {
+        $comment->load('media','replies');
+
+        return $this->success(
+            CommentResource::make($comment),
+            CommentConstants::COMMENTS_RETRIEVED_MESSAGE
+        );
     }
 
     public function likeComment($comment)
     {
-        
+
         $user = Auth::user();
         if ($comment->isLikedBy($user)) {
-            return response()->json(['message' => 'You have already liked this comment.'], 400);
+
+            return response()->json([
+                'message' => CommentConstants::LIKED_COMMENT_ERROR,
+            ], 400);
         }
         $comment->likedBy($user);
-        return response()->json(['message' => 'Comment liked successfully.'], 200);
+        ModelLiked::dispatch($user, $comment);
+
+        return response()->json([
+            'message' => CommentConstants::LIKED_COMMENT_MESSAGE,
+            'likes_count' => $comment->fresh()->likes_count,
+        ], 200);
+        
     }
 
     public function unlikeComment($comment)
     {
         $user = Auth::user();
         if (! $comment->isLikedBy($user)) {
-            return response()->json(['message' => 'You have not liked this comment.'], 400);
+            return response()->json([
+                'message' => CommentConstants::UNLIKED_COMMENT_ERROR,
+            ], 400);
         }
         $comment->dislikedBy($user);
-        return response()->json(['message' => 'Comment unliked successfully.'], 200);
+        return response()->json([
+            'message' => CommentConstants::UNLIKED_COMMENT_MESSAGE,
+            'likes_count' => $comment->fresh()->likes_count,
+        ], 200);
     }
 
     public function replyToComment($request, $comment)
@@ -83,12 +128,16 @@ class CommentService
         $reply = $comment->comments()->create([
             'user_id' => $user->id,
             'content' => $request->input('content'),
-            'parent_id' => $comment->id,
         ]);
-        // $comment->replies()->save($reply);
+
+        if ($request->has('media')) {
+            $uplode = $this->mediaService->handleMediaUpload($request->file('media'), $reply);
+        }
+        CommentCreated::dispatch($user, $reply);
+
         return response()->json([
-            'message' => 'Reply added successfully.',
-            'reply' => $reply,
+            'message' => CommentConstants::COMMENT_CREATE_MESSAGE,
+            'data' => CommentResource::make($reply)
         ], 201);
     }
 }

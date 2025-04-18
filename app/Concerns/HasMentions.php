@@ -27,7 +27,7 @@ trait HasMentions
     public function extractAndStoreMentions()
     {
         $content = $this->content ?? '';
-        preg_match_all('/@([\w_]+)/', $content, $matches);
+        preg_match_all('/@([\w][\w\.]*)/', $content, $matches);
 
         $usernames = $matches[1] ?? [];
 
@@ -45,9 +45,6 @@ trait HasMentions
     public function mentionedUsers()
     {
         return $this->belongsToMany(User::class, Mention::class, 'mentionable_id')
-            ->where('mentionable_type', array_search(static::class, Relation::morphMap()) ?: static::class)
-            ->select('user_id', 'username', 'email');
-        
-        
+            ->where('mentionable_type', array_search(static::class, Relation::morphMap()) ?: static::class);
     }
 }

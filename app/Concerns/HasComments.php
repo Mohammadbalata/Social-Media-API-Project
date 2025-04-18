@@ -28,4 +28,9 @@ trait HasComments
         return $this->belongsToMany(User::class, Comment::class, 'commentable_id')
             ->where('commentable_type', array_search(static::class, Relation::morphMap()) ?: static::class);
     }
+
+    public function commentable(): Relation
+    {
+        return $this->morphTo();
+    }
 }

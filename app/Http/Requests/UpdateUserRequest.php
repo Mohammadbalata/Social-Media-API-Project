@@ -25,7 +25,7 @@ class UpdateUserRequest extends FormRequest
             'username' => ['sometimes', 'string', 'max:255', 'unique:users,username,' . $this->user()->id],
             'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $this->user()->id],
             'bio' => ['nullable', 'string', 'max:500'],
-            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'website' => ['nullable', 'url', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
             'birthdate' => ['nullable', 'date', 'before:today'],

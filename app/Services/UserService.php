@@ -2,19 +2,23 @@
 
 namespace App\Services;
 
+use App\Events\UserFollowed;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
-class UserService
+class UserService extends BaseService
 {
     public function __construct(
         protected UserRepository $userRepo,
+        protected GeminiService $geminiService
     ) {}
 
     public function searchUser($request)
     {
+
         $search = $request->input('search');
         $query = User::query();
         if ($search) {
@@ -23,7 +27,7 @@ class UserService
                     ->orWhere('email', 'like', "%{$search}%");
             });
         }
-        $query->select('id', 'username', 'email', 'profile_image', 'verified');
+        $query->select('id', 'username', 'email', 'avatar', 'verified');
 
         $users = $query->paginate(10);
 
@@ -69,6 +73,8 @@ class UserService
         }
 
         $authUser->following()->attach($user);
+        // Dispatch the event to notify the user about the new follower
+        UserFollowed::dispatch($user, $authUser);
         return response()->json(['message' => 'success'], 200);
     }
 
@@ -93,11 +99,11 @@ class UserService
             return response()->json(['message' => 'You cannot block yourself.'], 400);
         }
 
-        if ($user->isBlocked($authUser)) {
+        if ($user->isBlockedBy($authUser)) {
             return response()->json(['message' => 'You cannot block this user.'], 400);
         }
 
-        if ($authUser->isBlocked($user)) {
+        if ($authUser->isBlockedBy($user)) {
             return response()->json(['message' => 'You have already blocked this user.'], 400);
         }
 
@@ -117,11 +123,30 @@ class UserService
             return response()->json(['message' => 'You cannot unblock yourself.'], 400);
         }
 
-        if (!$authUser->isBlocked($user)) {
+        if (!$authUser->isBlockedBy($user)) {
             return response()->json(['message' => 'You have not blocked this user.'], 400);
         }
 
         $authUser->blockedUsers()->detach($user);
         return response()->json(['message' => 'Successfully unblocked the user.'], 200);
     }
+
+    public function generateBio($request)
+    {
+        $intrests = $request->input('intrests');
+        $prompt = "generate a bio for a user who loves this intrests ( $intrests ) for a social media account at max 15 words ";
+        $response = $this->geminiService->generateContent($prompt);
+        $generatedBio = str_replace("\n", '', $response['candidates'][0]['content']['parts'][0]['text']);
+        return response()->json([
+            'generated_bio' => $generatedBio,
+        ], 200);
+    }
+
+    // public function generateBio($request)
+    // {
+    //     $body = $request->input('body');
+    //     $prompt = "you have this post body ($body) i want you to extract all possible tags that may be related in and format the tags in array like ['tag1','tag2'] and use snake_case";
+    //     $response = $this->geminiService->generateContent($prompt);
+    //     return $response;
+    // }
 }

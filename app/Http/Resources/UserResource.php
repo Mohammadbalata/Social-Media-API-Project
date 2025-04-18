@@ -19,7 +19,7 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'username' => $this->username,
-            'profile_image' => $this->profile_image,
+            'avatar' => $this->avatar,
             'email' => $this->email,
             'bio' => $this->bio,
             'website' => $this->website,
@@ -35,7 +35,7 @@ class UserResource extends JsonResource
             'following_count' => $this->following_count,
             'following' => $this->following,
             'followers' => $this->followers,
-            'posts' => PostResource::collection($this->posts),
+            'posts' => PostResource::collection($this->whenLoaded('posts')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
