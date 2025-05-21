@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Services\PostService;
 
-class LikePostController extends Controller
+class PostInteractionsController extends Controller
 {
 
     public function __construct(protected PostService $service) {}
@@ -19,6 +19,15 @@ class LikePostController extends Controller
     public function unlikePost(Post $post)
     {
         return $this->service->unlikePost($post);
+    }
+
+    public function pinPost(Post $post)
+    {
+        return $this->service->pinPost($post);
+    }
+    public function unpinPost(Post $post)
+    {
+        return $this->service->unpinPost($post);
     }
 
 }

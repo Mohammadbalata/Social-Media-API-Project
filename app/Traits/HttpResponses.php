@@ -38,17 +38,4 @@ trait HttpResponses
             'message' => $message,
         ], $code);
     }
-
-    // /**
-    //  * @param $data
-    //  * @param string|null $message
-    //  * @param int $code
-    //  * @return JsonResponse
-    //  */
-    // protected function authorizeOwnership(Model $model)
-    // {
-    //     if ($model->user_id !== Auth::id()) {
-    //         return $this->error('Unauthorized action.', Response::HTTP_FORBIDDEN);
-    //     }
-    // }
 }

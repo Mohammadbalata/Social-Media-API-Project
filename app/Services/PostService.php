@@ -7,7 +7,7 @@ use App\Events\ModelLiked;
 use App\Http\Requests\PostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
-use App\Repositories\PostRepository;
+use App\Repositories\Eloquent\PostRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -15,7 +15,7 @@ class PostService extends BaseService
 {
     public function __construct(
         protected MediaService $mediaService,
-        protected PostRepository $postRepo
+        protected PostRepository $postRepository
     ) {}
 
 
@@ -41,7 +41,6 @@ class PostService extends BaseService
         $post->update($request->validated());
         $post->load([
             'media',
-            'comments'
         ]);
 
 
@@ -63,23 +62,11 @@ class PostService extends BaseService
     }
 
 
-    public function getFeed()
-    {
-        $user  = Auth::guard('sanctum')->user();
-
-        $posts = Post::visibleTo($user)
-            ->with([
-                'media',
-            ])->paginate(10);
-
-        return response()->json(PostResource::collection($posts), 200);
-    }
 
     public function getPost($post)
     {
         $post->load([
             'media',
-            'comments'
         ]);
 
         return response()->json([
@@ -119,6 +106,23 @@ class PostService extends BaseService
         return response()->json([
             'message' => PostConstants::UNLIKED_POST_MESSAGE,
             'likes_count' => $post->fresh()->likes_count
+        ], 200);
+    }
+    public function pinPost($post)
+    {
+        $post->is_pinned = true;
+        $post->save();
+        return response()->json([
+            'message' => PostConstants::POST_PINNED_MESSAGE,
+        ], 200);
+    }
+
+    public function unpinPost($post)
+    {
+        $post->is_pinned = false;
+        $post->save();
+        return response()->json([
+            'message' => PostConstants::POST_UNPINNED_MESSAGE,
         ], 200);
     }
 }

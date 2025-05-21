@@ -7,12 +7,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Laravel\Scout\Searchable;
 
 class User extends Authenticatable
 {
 
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens,
+        HasFactory,
+        Notifiable,
+        Searchable;
 
     /**
      * The attributes that are mass assignable.
@@ -66,14 +70,12 @@ class User extends Authenticatable
     public function followers()
     {
         return $this->belongsToMany(User::class, 'followers', 'following_id', 'follower_id')
-            ->select('id', 'username', 'email', 'avatar', 'verified')
             ->withTimestamps();
     }
 
     public function following()
     {
         return $this->belongsToMany(User::class, 'followers', 'follower_id', 'following_id')
-            ->select('id', 'username', 'email', 'avatar', 'verified')
             ->withTimestamps();
     }
 
@@ -103,5 +105,15 @@ class User extends Authenticatable
     public function isBlockedBy(User $user): bool
     {
         return $this->blockedUsers()->where('id', $user->id)->exists();
+    }
+
+    public function toSearchableArray()
+    {
+        return [
+            'id' => (string) $this->id,
+            'username' => $this->username,
+            'email' => $this->email,
+            'created_at' => $this->created_at->timestamp,
+        ];
     }
 }

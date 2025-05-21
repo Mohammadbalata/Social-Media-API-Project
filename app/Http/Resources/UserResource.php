@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -33,8 +32,8 @@ class UserResource extends JsonResource
             "email_verified_at" =>  $this->email_verified_at,
             'followers_count' => $this->followers_count,
             'following_count' => $this->following_count,
-            'following' => $this->following,
-            'followers' => $this->followers,
+            'following' => $this->whenLoaded('following'),
+            'followers' => $this->whenLoaded('followers'),
             'posts' => PostResource::collection($this->whenLoaded('posts')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

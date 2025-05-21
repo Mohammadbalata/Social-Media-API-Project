@@ -30,7 +30,7 @@ trait HasLikes
         $this->unsetRelation('likes');
     }
 
-    public function isLikedBy(User $user): bool
+    public function isLikedBy($user): bool
     {
         return $this->likes()->where('user_id', $user->id)->exists();
     }

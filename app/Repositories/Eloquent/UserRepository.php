@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repositories;
+namespace App\Repositories\Eloquent;
 
 
 use App\Models\User;
@@ -19,12 +19,8 @@ class UserRepository
         return User::find($id);
     }
 
-    public function searchUser($search): Builder
+    public function searchUser($search)
     {
-        return User::query()
-            ->where('username', 'like', "%{$search}%")
-            ->orWhere('email', 'like', "%{$search}%")
-            ->select('id', 'username', 'email', 'avatar', 'verified')
-            ->paginate(10);
+        return User::search($search);
     }
 }

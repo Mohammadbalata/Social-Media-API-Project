@@ -7,32 +7,13 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
 
 class UserService extends BaseService
 {
     public function __construct(
-        protected UserRepository $userRepo,
         protected GeminiService $geminiService
     ) {}
 
-    public function searchUser($request)
-    {
-
-        $search = $request->input('search');
-        $query = User::query();
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('username', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-        $query->select('id', 'username', 'email', 'avatar', 'verified');
-
-        $users = $query->paginate(10);
-
-        return response()->json($users, 200);
-    }
 
     public function getUserData($user)
     {
@@ -134,7 +115,7 @@ class UserService extends BaseService
     public function generateBio($request)
     {
         $intrests = $request->input('intrests');
-        $prompt = "generate a bio for a user who loves this intrests ( $intrests ) for a social media account at max 15 words ";
+        $prompt = "generate a bio for a user who loves this intrests ( $intrests ) for a social media account at max 15 words and with this language $intrests return the bio just";
         $response = $this->geminiService->generateContent($prompt);
         $generatedBio = str_replace("\n", '', $response['candidates'][0]['content']['parts'][0]['text']);
         return response()->json([

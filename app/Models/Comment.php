@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Concerns\HasComments;
 use App\Concerns\HasLikes;
 use App\Concerns\HasMedia;
 use App\Concerns\HasMentions;
@@ -15,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Comment extends Model
 {
     use HasFactory,
-        HasComments,
         HasLikes,
         HasMentions,
         HasMedia,
@@ -24,18 +22,18 @@ class Comment extends Model
     protected $fillable = [
         'user_id',
         'content',
-        'commentable_id',
-        'commentable_type',
+        'post_id',
         'parent_id'
     ];
 
     protected $with = [
         'user:id,username,avatar,is_verified',
-        'mentionedUsers:id,username'
+        'mentionedUsers:id,username',
     ];
 
     protected $withCount = [
-        "likes"
+        'likes',
+        // 'replies'
     ];
 
     public function user(): BelongsTo
@@ -43,32 +41,26 @@ class Comment extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function replies(): HasMany
+    public function post()
     {
-        return $this->hasMany(Comment::class, 'commentable_id');
+        return $this->belongsTo(Post::class);
     }
 
-    public function parent(): BelongsTo
+    public function parent()
     {
-        return $this->belongsTo(Comment::class, 'commentable_id');
+        return $this->belongsTo(Comment::class, 'parent_id');
     }
 
-
-    public function listRelationships()
+    public function replies()
     {
-        $relations = [];
+        return $this->hasMany(Comment::class, 'parent_id');
+    }
 
-        foreach ((new \ReflectionClass($this))->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
-            if (
-                $method->class == get_class($this) &&
-                !$method->getParameters() &&
-                $method->getReturnType() &&
-                strpos($method->getReturnType(), 'Illuminate\Database\Eloquent\Relations') !== false
-            ) {
-                $relations[] = $method->getName();
-            }
-        }
-
-        return $relations;
+    /**
+     * Get the top-level post for this comment, even if it's a reply.
+     */
+    public function rootPost()
+    {
+        return $this->parent ? $this->parent->rootPost() : $this->post;
     }
 }

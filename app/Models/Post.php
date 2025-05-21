@@ -2,26 +2,27 @@
 
 namespace App\Models;
 
-use App\Concerns\HasComments;
 use App\Concerns\HasLikes;
 use App\Concerns\HasMedia;
 use App\Concerns\HasMentions;
 use App\Concerns\HasTags;
 use App\Traits\VisibilityScope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Scout\Searchable;
 
 class Post extends Model
 {
 
     use HasFactory,
-        HasComments,
         HasLikes,
         HasMentions,
         HasMedia,
         VisibilityScope,
-        HasTags;
+        HasTags,
+        Searchable;
 
     protected $fillable = [
         'user_id',
@@ -32,62 +33,59 @@ class Post extends Model
         'shares',
     ];
 
+    protected $with = [
+        'user',
+        'likes',
+        'mentionedUsers:id,username',
+        
+    ];
+
+    protected $withCount = [
+        'likes',
+        'allComments',
+    ];
+
+
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    protected $with = [
-        'user:id,username,avatar,is_verified',
-        'mentionedUsers:id,username',
-    ];
-
-    protected $withCount = [
-		'likes',
-        'comments'
-	];
-
-    // public function getLikesCountAttribute()
-    // {
-    //     return $this->likers()->count();
-    // }
-
-    // public function getCommentsCountAttribute()
-    // {
-    //     return $this->comments()->with(['replies' => function ($query) {
-    //         $query->withCount('replies');
-    //     }])->get()->sum(function ($comment) {
-    //         return 1 + $this->countReplies($comment);
-    //     });
-    // }
-
-    // protected function countReplies($comment)
-    // {
-    //     if ($comment->replies->isEmpty()) {
-    //         return 0;
-    //     }
-
-    //     return $comment->replies->sum(function ($reply) {
-    //         return 1 + $this->countReplies($reply);
-    //     });
-    // }
-
-
-    public function listRelationships()
+    public function comments(): HasMany
     {
-        $relations = [];
+        return $this->hasMany(Comment::class)->whereNull('parent_id');
+    }
 
-        foreach ((new \ReflectionClass($this))->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
-            if (
-                $method->class == get_class($this) &&
-                !$method->getParameters() &&
-                $method->getReturnType() &&
-                strpos($method->getReturnType(), 'Illuminate\Database\Eloquent\Relations') !== false
-            ) {
-                $relations[] = $method->getName();
-            }
-        }
 
-        return $relations;
+    public function commenters(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, Comment::class, 'post_id', 'user_id')
+                    ->distinct();
+    }
+
+    
+    public function allComments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+   
+    protected function casts(): array
+    {
+        return [
+            'is_pinned' => 'boolean',
+            'is_deleted' => 'boolean',
+        ];
+    }
+
+    public function toSearchableArray()
+    {
+        return [
+            'id' => (string) $this->id,
+            'title' => $this->title,
+            'content' => $this->content,
+            'created_at' => $this->created_at->timestamp,
+        ];
     }
 }

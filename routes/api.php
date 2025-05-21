@@ -6,8 +6,8 @@ use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Comments\CommentReplyController;
 use App\Http\Controllers\Api\Comments\CommentsController;
 use App\Http\Controllers\Api\Comments\LikeCommentController;
-use App\Http\Controllers\Api\HomeController;
-use App\Http\Controllers\Api\Posts\LikePostController;
+use App\Http\Controllers\Api\HomePageController;
+use App\Http\Controllers\Api\Posts\PostInteractionsController;
 use App\Http\Controllers\Api\Posts\PostCommentController;
 use App\Http\Controllers\Api\Posts\PostsController;
 use App\Http\Controllers\Api\Tags\TagsController;
@@ -23,14 +23,14 @@ Route::post('/auth/register', RegisterController::class);
 Route::post('/auth/login', LoginController::class);
 
 
-Route::get('/users', [UsersController::class, 'searchUser']);
+Route::get('/search', [HomePageController::class, 'search']);
 Route::get('/users/{user}', [UsersController::class, 'getUserData']);
 
 Route::get('/users/{user}/followers', [FollowController::class, 'getUserFollowers']);
 Route::get('/users/{user}/following', [FollowController::class, 'getUserFollowing']);
 
 
-Route::get('/posts', [HomeController::class, 'getFeed']);
+Route::get('/posts', [HomePageController::class, 'getFeed']);
 Route::get('/posts/{post}', [PostsController::class, 'getPost'])->middleware('check.block:post');
 
 Route::get('/comments/{comment}', [CommentsController::class, 'getComment'])->middleware('check.block:comment');
@@ -58,17 +58,24 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::put('/posts/{post}', [PostsController::class, 'updatePost']);
   Route::delete('/posts/{post}', [PostsController::class, 'deletePost']);
   Route::middleware('check.block:post')->group(function () {
-    Route::post('/posts/{post}/like', [LikePostController::class, 'likePost']);
-    Route::delete('/posts/{post}/unlike', [LikePostController::class, 'unlikePost']);
+    Route::post('/posts/{post}/like', [PostInteractionsController::class, 'likePost']);
+    Route::delete('/posts/{post}/unlike', [PostInteractionsController::class, 'unlikePost']);
 
     Route::get('/posts/{post}/comments', [PostCommentController::class, 'getPostComments']);
     Route::post('/posts/{post}/comments', [PostCommentController::class, 'addCommentToPost']);
+
+    Route::post('/posts/{post}/pin', [PostInteractionsController::class, 'pinPost']);
+    Route::post('/posts/{post}/unpin', [PostInteractionsController::class, 'unpinPost']);
+
   });
 
   // Comment Routes
   Route::middleware('check.block:comment')->group(function () {
     Route::post('/comments/{comment}/like', [LikeCommentController::class, 'likeComment']);
     Route::delete('/comments/{comment}/unlike', [LikeCommentController::class, 'unlikeComment']);
+    Route::get('/comments/{comment}/replies', [CommentReplyController::class, 'getCommentReplies']);
+
+
   });
   Route::put('/comments/{comment}', [CommentsController::class, 'updateComment']);
   Route::delete('/comments/{comment}', [CommentsController::class, 'deleteComment']);

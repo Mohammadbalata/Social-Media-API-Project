@@ -24,10 +24,11 @@ class SendCommentCreatedNotification
     {
         // Send notification to the user
         $user = $event->user;
+
         $model = $event->model;
         $commentable = $model->commentable;
         $commentable->user->notify(new CommentCreatedNotification($user, $commentable, $model));
 
-        // Assuming you have a Notification class set up
+        
     }
 }

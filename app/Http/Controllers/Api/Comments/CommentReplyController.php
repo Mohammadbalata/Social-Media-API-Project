@@ -17,4 +17,9 @@ class CommentReplyController extends Controller
         return $this->service->replyToComment($request, $comment);
     }
 
+    public function getCommentReplies(Comment $comment)
+    {
+        return $this->service->getCommentReplies($comment);
+    }
+
 }

@@ -12,4 +12,6 @@ class PostConstants
     public const LIKED_POST_ERROR = 'You have already liked this post.';
     public const UNLIKED_POST_MESSAGE = 'Post unliked successfully.';
     public const UNLIKED_POST_ERROR = 'You have not liked this post.';
+    public const POST_PINNED_MESSAGE = 'Post pinned successfully.';
+    public const POST_UNPINNED_MESSAGE = 'Post unpinned successfully.';
 }

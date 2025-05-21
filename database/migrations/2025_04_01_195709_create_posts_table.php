@@ -19,7 +19,6 @@ return new class extends Migration
             $table->enum('status', ['public', 'archived', 'private'])->default('public'); 
             $table->boolean('is_pinned')->default(false); 
             $table->boolean('is_deleted')->default(false); 
-            $table->integer('likes')->default(0); 
             $table->integer('shares')->default(0); 
             $table->integer('comments_count')->default(0);
             $table->timestamps(); 

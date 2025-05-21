@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
  
 class CommentService extends BaseService
 {
-    public function __construct(protected MediaService $mediaService, protected CommentRepository $commentRepo) {}
+    public function __construct(protected MediaService $mediaService) {}
 
 
     public function addCommentToPost($request, $post)
@@ -27,7 +27,9 @@ class CommentService extends BaseService
         if ($request->has('media')) {
             $uplode = $this->mediaService->handleMediaUpload($request->file('media'), $comment);
         }
-        CommentCreated::dispatch($user, $comment);
+        
+        // CommentCreated::dispatch($user, $comment);
+        
 
         $comment->load('media','mentionedUsers:id,username');
         $comment->loadCount('likes');
@@ -42,6 +44,7 @@ class CommentService extends BaseService
     public function getPostComments($post)
     {
         $comments = $post->comments()->paginate(8);
+        $comments->loadCount('replies');
         
         return CommentResource::collection($comments);
 
@@ -80,6 +83,7 @@ class CommentService extends BaseService
     public function getComment($comment)
     {
         $comment->load('media','replies');
+        $comment->loadCount('replies');
 
         return $this->success(
             CommentResource::make($comment),
@@ -125,19 +129,28 @@ class CommentService extends BaseService
     public function replyToComment($request, $comment)
     {
         $user = Auth::user();
-        $reply = $comment->comments()->create([
+        $rootPost = $comment->rootPost();
+        $reply = $comment->replies()->create([
             'user_id' => $user->id,
             'content' => $request->input('content'),
+            'post_id' => $rootPost->id,
         ]);
-
+        
         if ($request->has('media')) {
             $uplode = $this->mediaService->handleMediaUpload($request->file('media'), $reply);
         }
-        CommentCreated::dispatch($user, $reply);
+        // CommentCreated::dispatch($user, $reply);
 
         return response()->json([
             'message' => CommentConstants::COMMENT_CREATE_MESSAGE,
             'data' => CommentResource::make($reply)
         ], 201);
+    }
+
+    public function getCommentReplies($comment)
+    {
+        $replies = $comment->replies()->paginate(5);
+        $replies->loadCount('replies');
+        return CommentResource::collection($replies);
     }
 }
