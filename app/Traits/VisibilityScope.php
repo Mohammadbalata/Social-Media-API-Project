@@ -15,7 +15,7 @@ trait VisibilityScope
         return $query->when(
             !$viewer,
             fn($q) => $q->forGuest(),
-            fn($q) => $q->forUser($viewer)->excludeBlocked($viewer)
+            fn($q) => $q->forUser($viewer)
         );
     }
 
@@ -42,16 +42,16 @@ trait VisibilityScope
         });
     }
 
-    /**
-     * Exclude blocked content
-     */
-    public function scopeExcludeBlocked(Builder $query, User $user): Builder
-    {
-        return $query->whereDoesntHave('user', function ($q) use ($user) {
-            $q->where(function ($q) use ($user) {
-                $q->whereHas('blockedUsers', fn($q) => $q->where('blocked_user_id', $user->id))
-                    ->orWhereHas('blockedByUsers', fn($q) => $q->where('user_id', $user->id));
-            });
-        });
-    }
+    // /**
+    //  * Exclude blocked content
+    //  */
+    // public function scopeExcludeBlocked(Builder $query, User $user): Builder
+    // {
+    //     return $query->whereDoesntHave('user', function ($q) use ($user) {
+    //         $q->where(function ($q) use ($user) {
+    //             $q->whereHas('blockedUsers', fn($q) => $q->where('blocked_user_id', $user->id))
+    //                 ->orWhereHas('blockedByUsers', fn($q) => $q->where('user_id', $user->id));
+    //         });
+    //     });
+    // }
 }

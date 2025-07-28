@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Constants\CommentConstants;
 use App\Events\CommentCreated;
 use App\Events\ModelLiked;
-use App\Http\Resources\CommentCollection;
 use App\Http\Resources\CommentResource;
 use App\Repositories\CommentRepository;
 use Illuminate\Http\Response;

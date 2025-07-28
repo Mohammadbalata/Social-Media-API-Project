@@ -67,6 +67,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function devices()
+    {
+        return $this->hasMany(Device::class);
+    }
+
     public function followers()
     {
         return $this->belongsToMany(User::class, 'followers', 'following_id', 'follower_id')
@@ -97,6 +102,11 @@ class User extends Authenticatable
         return $this->hasMany(Post::class);
     }
 
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
     public function isFollowing(User $user): bool
     {
         return $this->following()->where('id', $user->id)->exists();
@@ -106,6 +116,12 @@ class User extends Authenticatable
     {
         return $this->blockedUsers()->where('id', $user->id)->exists();
     }
+
+    public function getFcmTokensAttribute()
+    {
+        return $this->devices()->pluck('fcm_token')->toArray();
+    }
+
 
     public function toSearchableArray()
     {

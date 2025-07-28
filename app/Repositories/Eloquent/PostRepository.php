@@ -16,9 +16,10 @@ class PostRepository extends BaseRepository implements PostRepositoryInterface
 
     public function getPostFeed(null | User  $user, int $limit = 10)
     {
-        return Post::visibleTo($user)
-            ->with([
-                'media',
-            ])->paginate($limit);
+         
+
+        return Post::visibleTo($user)->with([
+                'media','likes'
+            ])->oldest('id')->paginate($limit);
     }
 }

@@ -6,7 +6,6 @@ use App\Constants\PostConstants;
 use App\Events\ModelLiked;
 use App\Http\Requests\PostRequest;
 use App\Http\Resources\PostResource;
-use App\Models\Post;
 use App\Repositories\Eloquent\PostRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -27,10 +26,13 @@ class PostService extends BaseService
             $uplode = $this->mediaService->handleMediaUpload($request->file('media'), $post);
         }
         $post->load('media');
-        return response()->json([
-            'message' => PostConstants::POST_CREATE_MESSAGE,
-            'data' => PostResource::make($post)
-        ], 201);
+
+        return jsonResponse(
+            true,
+            201,
+            PostConstants::POST_CREATE_MESSAGE,
+            ['data' => PostResource::make($post)]
+        );
     }
 
     public function updatePost($request, $post)
@@ -43,11 +45,12 @@ class PostService extends BaseService
             'media',
         ]);
 
-
-        return response()->json([
-            'message' => PostConstants::POST_UPDATE_MESSAGE,
-            'data' => PostResource::make($post)
-        ], 200);
+        return jsonResponse(
+            true,
+            200,
+            PostConstants::POST_UPDATE_MESSAGE,
+            ['data' => PostResource::make($post)]
+        );
     }
 
     public function deletePost($post)
@@ -56,22 +59,35 @@ class PostService extends BaseService
 
         $post->delete();
 
-        return response()->json([
-            'message' => PostConstants::POST_DESTROY_MESSAGE
-        ], 200);
+
+        return jsonResponse(
+            true,
+            200,
+            PostConstants::POST_DESTROY_MESSAGE,
+        );
     }
-
-
 
     public function getPost($post)
     {
         $post->load([
+            'user',
+            'likes',
+            'mentionedUsers:id,username',
             'media',
+            'likers',
         ]);
 
-        return response()->json([
-            'post' => PostResource::make($post),
+        $post->loadCount([
+            'likes',
+            'allComments',
         ]);
+
+        return jsonResponse(
+            true,
+            200,
+            PostConstants::POST_RETRIEVED_MESSAGE,
+            ['data' => PostResource::make($post)]
+        );
     }
 
     public function likePost($post)
@@ -79,50 +95,92 @@ class PostService extends BaseService
 
         $user = Auth::user();
         if ($post->isLikedBy($user)) {
-            return response()->json([
-                'message' => PostConstants::LIKED_POST_ERROR,
-            ], 400);
+            return jsonResponse(
+                false,
+                400,
+                PostConstants::LIKED_POST_ERROR,
+            );
         }
 
         $post->likedBy($user);
         // Dispatch the event to notify the user about the new like
         ModelLiked::dispatch($user, $post);
-        return response()->json([
-            'message' => PostConstants::LIKED_POST_MESSAGE,
-            'likes_count' => $post->fresh()->likes_count
-        ], 200);
+
+        if ($post->user->id !== $user->id) {
+            sendNotification(
+                $post->user->fcm_tokens,
+                'Someone Has liked Your Post',
+                "@{$user->username} Liked Your Post",
+                ['type' => 'post like', 'user_id' => $user->id]
+            );
+        }
+
+        return jsonResponse(
+            true,
+            200,
+            PostConstants::LIKED_POST_MESSAGE,
+            ['likes_count' => $post->fresh()->likes_count]
+        );
     }
 
     public function unlikePost($post)
     {
         $user = Auth::user();
         if (! $post->isLikedBy($user)) {
-            return response()->json([
-                'message' => PostConstants::UNLIKED_POST_ERROR,
-            ], 400);
+            return jsonResponse(
+                false,
+                400,
+                PostConstants::UNLIKED_POST_ERROR,
+            );
         }
         $post->dislikedBy($user);
 
-        return response()->json([
-            'message' => PostConstants::UNLIKED_POST_MESSAGE,
-            'likes_count' => $post->fresh()->likes_count
-        ], 200);
+        return jsonResponse(
+            true,
+            200,
+            PostConstants::UNLIKED_POST_MESSAGE,
+            ['likes_count' => $post->fresh()->likes_count]
+        );
     }
     public function pinPost($post)
     {
+
+        $user = authUser();
+        if ($user->id !== $post->user_id) {
+            return jsonResponse(
+                false,
+                403,
+                PostConstants::UNAUTHORIZED_MESSAGE,
+            );
+        }
+
         $post->is_pinned = true;
         $post->save();
-        return response()->json([
-            'message' => PostConstants::POST_PINNED_MESSAGE,
-        ], 200);
+        return jsonResponse(
+            true,
+            200,
+            PostConstants::POST_PINNED_MESSAGE,
+        );
     }
 
     public function unpinPost($post)
     {
+        $user = authUser();
+        if ($user->id !== $post->user_id) {
+            return jsonResponse(
+                false,
+                403,
+                PostConstants::UNAUTHORIZED_MESSAGE,
+            );
+        }
+
         $post->is_pinned = false;
         $post->save();
-        return response()->json([
-            'message' => PostConstants::POST_UNPINNED_MESSAGE,
-        ], 200);
+
+        return jsonResponse(
+            true,
+            200,
+            PostConstants::POST_UNPINNED_MESSAGE,
+        );
     }
 }

@@ -6,6 +6,7 @@ use App\Concerns\HasLikes;
 use App\Concerns\HasMedia;
 use App\Concerns\HasMentions;
 use App\Concerns\HasTags;
+use App\Traits\HasBlockFilter;
 use App\Traits\VisibilityScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,8 +20,9 @@ class Post extends Model
     use HasFactory,
         HasLikes,
         HasMentions,
-        HasMedia,
+        HasBlockFilter,
         VisibilityScope,
+        HasMedia,
         HasTags,
         Searchable;
 
@@ -33,20 +35,7 @@ class Post extends Model
         'shares',
     ];
 
-    protected $with = [
-        'user',
-        'likes',
-        'mentionedUsers:id,username',
-        
-    ];
-
-    protected $withCount = [
-        'likes',
-        'allComments',
-    ];
-
-
-
+  
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -70,6 +59,11 @@ class Post extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function scopePinned($query)
+    {
+        return $query->where('is_pinned', '1');
+    }
+
    
     protected function casts(): array
     {
@@ -77,6 +71,10 @@ class Post extends Model
             'is_pinned' => 'boolean',
             'is_deleted' => 'boolean',
         ];
+    }
+
+    public function getLikesCountAttribute(){
+        return $this->likes()->count();
     }
 
     public function toSearchableArray()

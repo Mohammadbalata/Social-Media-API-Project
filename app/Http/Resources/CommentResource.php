@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
 
 class CommentResource extends JsonResource
 {
@@ -16,20 +17,28 @@ class CommentResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user' => [
-                'id' => $this->user->id,
-                'username' => $this->user->username,
-                'avatar' => $this->user->avatar,
-                'is_verified' => $this->user->is_verified
-            ],
+            'user' => $this->whenLoaded('user', function () {
+                return (new UserResource($this->user))->serializeForList();
+            }),
             'content' => $this->content,
             'parent_id' => $this->parent_id,
             'likes_count' => $this->whenCounted('likes'),
             'replies_count' => $this->whenCounted('replies'),
-            'likers' => $this->whenLoaded('likers'),
-            'mentions' => $this->whenLoaded('mentionedUsers'),
+            'likers' => $this->whenLoaded('likers', function () {
+                return $this->likers->map(function ($user) {
+                    return (new UserResource($user))->serializeForList();
+                });
+            }),
+            'mentions' => $this->whenLoaded('mentionedUsers', function () {
+                return $this->mentionedUsers->map(function ($user) {
+                    return (new UserResource($user))->serializeForList();
+                });
+            }),
             'replies' => CommentResource::collection($this->whenLoaded('replies')),
             'media' => MediaResource::collection($this->whenLoaded('media')),
+            'is_liked' => $this->whenLoaded('likes', function () {
+                return $this->likes->where('user_id', Auth::guard('sanctum')->id())->isNotEmpty();
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

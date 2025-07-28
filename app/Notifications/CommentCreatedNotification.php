@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Kreait\Firebase\Messaging\FcmOptions;
 
 class CommentCreatedNotification extends Notification
 {
@@ -30,7 +31,6 @@ class CommentCreatedNotification extends Notification
     {
         return ['mail'];
     }
-
     /**
      * Get the mail representation of the notification.
      */

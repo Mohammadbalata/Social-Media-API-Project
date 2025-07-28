@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\User;
+use App\Services\NotificationService;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\LogoutController;
 use App\Http\Controllers\Api\Auth\RegisterController;
@@ -24,7 +26,7 @@ Route::post('/auth/login', LoginController::class);
 
 
 Route::get('/search', [HomePageController::class, 'search']);
-Route::get('/users/{user}', [UsersController::class, 'getUserData']);
+Route::get('/users/{user}', [UsersController::class, 'getUserProfileById']);
 
 Route::get('/users/{user}/followers', [FollowController::class, 'getUserFollowers']);
 Route::get('/users/{user}/following', [FollowController::class, 'getUserFollowing']);
@@ -47,11 +49,12 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::post('/users/{user}/block', [BlockController::class, 'blockUser']);
   Route::delete('/users/{user}/unblock', [BlockController::class, 'unblockUser']);
   Route::middleware('check.block:user')->group(function () {
+    Route::get('/users/{user}/posts', [UsersController::class, 'getUserPosts']);
     Route::post('/users/{user}/follow', [FollowController::class, 'followUser']);
     Route::delete('/users/{user}/unfollow', [FollowController::class, 'unfollowUser']);
   });
 
-  Route::get('/user/generate-bio',[UsersController::class,'generateBio']);
+  Route::get('/users/generate-bio', [UsersController::class, 'generateBio']);
 
   // Post Routes
   Route::post('/posts', [PostsController::class, 'createPost']);
@@ -66,7 +69,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/posts/{post}/pin', [PostInteractionsController::class, 'pinPost']);
     Route::post('/posts/{post}/unpin', [PostInteractionsController::class, 'unpinPost']);
-
   });
 
   // Comment Routes
@@ -74,11 +76,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/comments/{comment}/like', [LikeCommentController::class, 'likeComment']);
     Route::delete('/comments/{comment}/unlike', [LikeCommentController::class, 'unlikeComment']);
     Route::get('/comments/{comment}/replies', [CommentReplyController::class, 'getCommentReplies']);
-
-
   });
   Route::put('/comments/{comment}', [CommentsController::class, 'updateComment']);
   Route::delete('/comments/{comment}', [CommentsController::class, 'deleteComment']);
 
   Route::post('/comments/{comment}/reply', [CommentReplyController::class, 'replyToComment']);
+});
+
+Route::get('/send-dummy-notification', function () {
+  $user = User::find(1);
+  $fcmTokens =  $user->fcm_tokens;
+  app(NotificationService::class)->send(
+    $fcmTokens,
+    '🔔 Test Notification',
+    'This is a dummy notification message.',
+    ['type' => 'test', 'user_id' => $user->id]
+  );
+  return response()->json(['message' => 'Notification sent to user ID 1']);
 });

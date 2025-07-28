@@ -16,7 +16,7 @@ class CheckIfBlocked
      */
     public function handle(Request $request, Closure $next, string $type): Response
     {
-        $user  = Auth::guard('sanctum')->user();
+        $user  = authUser();
         $targetUser = match ($type) {
             'user' => $request->route('user'),
             'post' => $request->route('post')->user,

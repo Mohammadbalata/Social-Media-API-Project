@@ -16,15 +16,12 @@ class PostResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        
+
         return [
             'id' => $this->id,
-            'user' => [
-                'id' => $this->user->id,
-                'username' => $this->user->username,
-                'avatar' => $this->user->avatar,
-                'is_verified' => $this->user->is_verified
-            ],
+            'user' => $this->whenLoaded('user', function () {
+                return (new UserResource($this->user))->serializeForList();
+            }),
             'title' => $this->title,
             'content' => $this->content,
             'type' => $this->type,
@@ -34,13 +31,28 @@ class PostResource extends JsonResource
             'shares' => $this->shares,
             'likes_count' => $this->whenCounted('likes'),
             'comments_count' => $this->whenCounted('allComments'),
-            'likers' => $this->whenLoaded('likers'),
-            'mentions' => $this->whenLoaded('mentionedUsers'),
+            'likers' => $this->whenLoaded('likers', function () {
+                return $this->likers->map(function ($user) {
+                    return (new UserResource($user))->serializeForList();
+                });
+            }),
+            'mentions' => $this->whenLoaded('mentionedUsers', function () {
+                return $this->mentionedUsers->map(function ($user) {
+                    return (new UserResource($user))->serializeForList();
+                });
+            }),
+
             'comments' => CommentResource::collection($this->whenLoaded('comments')),
             'media' => MediaResource::collection($this->whenLoaded('media')),
+            'is_liked' => $this->whenLoaded('likes', function () {
+                return $this->likes->where('user_id', Auth::guard('sanctum')->id())->isNotEmpty();
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'is_liked' => $this->likes->where('user_id', Auth::guard('sanctum')->id())->isNotEmpty(),
         ];
     }
+
+
+
+   
 }

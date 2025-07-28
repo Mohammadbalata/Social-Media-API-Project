@@ -22,4 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (Throwable $e) {
             return (new ApiHandler(app()))->render(request(), $e);
         });
-    })->create();
+    })->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+        // $schedule->command('')
+        //     ->everyFiveSeconds()->withoutOverlapping();
+       
+    })
+    ->create();

@@ -6,16 +6,17 @@ use App\Concerns\HasLikes;
 use App\Concerns\HasMedia;
 use App\Concerns\HasMentions;
 use App\Concerns\HasTags;
+use App\Traits\HasBlockFilter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Comment extends Model
 {
     use HasFactory,
         HasLikes,
         HasMentions,
+        HasBlockFilter,
         HasMedia,
         HasTags;
 

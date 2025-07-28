@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Http\Resources\PaginationResource;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\TagResource;
 use App\Http\Resources\UserResource;
@@ -43,10 +44,15 @@ class HomePageService extends BaseService
 
     public function getFeed()
     {
-        $user  = Auth::guard('sanctum')->user();
+        $user  = authUser();
 
         $posts = $this->postRepository->getPostFeed($user);
 
-        return PostResource::collection($posts);
+        return jsonResponse(
+            true,
+            200,
+            'Feed retrieved successfully.',
+            ['data' => PaginationResource::make(PostResource::collection($posts))]
+        );
     }
 }

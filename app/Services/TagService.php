@@ -2,9 +2,7 @@
 
 namespace App\Services;
 
-use App\Http\Resources\CommentCollection;
 use App\Http\Resources\CommentResource;
-use App\Http\Resources\PostCollection;
 use App\Http\Resources\PostResource;
 use App\Models\Tag;
 

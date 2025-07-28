@@ -2,11 +2,10 @@
 
 namespace App\Http\Resources;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UserResource extends JsonResource
+class ProfileResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -30,21 +29,21 @@ class UserResource extends JsonResource
             "status" => $this->status,
             "last_seen" =>  $this->last_seen,
             "email_verified_at" =>  $this->email_verified_at,
+            'followers_count' => $this->followers_count ?? 0,
+            'following_count' => $this->following_count ?? 0,
+            'following' => $this->whenLoaded('following', function () {
+                return $this->following->map(function ($user) {
+                    return (new self($user))->serializeForList();
+                });
+            }),
+            'followers' => $this->whenLoaded('followers', function () {
+                return $this->followers->map(function ($user) {
+                    return (new self($user))->serializeForList();
+                });
+            }),
+            'posts' => PostResource::collection($this->whenLoaded('posts')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-        ];
-    }
-
-    public function serializeForList(): array
-    {
-        return [
-            'id' => $this->id,
-            'username' => $this->username,
-            'avatar' => $this->avatar,
-            'bio' => $this->bio,
-            'is_verified' => $this->is_verified,
-            // 'followers_count' => $this->followers_count ?? 0,
-            // 'following_count' => $this->following_count ?? 0,
         ];
     }
 }
