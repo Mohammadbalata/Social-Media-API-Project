@@ -3,11 +3,14 @@
 namespace App\Services;
 
 use App\Constants\UserConstants;
-use App\Events\UserFollowed;
+use App\Enum\FollowRequestStatusEnum;
+use App\Http\Resources\FollowRequestResource;
 use App\Http\Resources\PaginationResource;
 use App\Http\Resources\ProfileResource;
 use App\Http\Resources\UserResource;
+use App\Models\FollowRequest;
 use App\Models\Post;
+use App\Models\User;
 
 class UserService extends BaseService
 {
@@ -101,13 +104,107 @@ class UserService extends BaseService
             );
         }
 
-        $authUser->following()->attach($user);
-        // Dispatch the event to notify the user about the new follower
-        UserFollowed::dispatch($user, $authUser);
+        if ($user->is_private) {
+            // If the user is private, send a follow request
+            FollowRequest::firstOrCreate([
+                'sender_id' => $authUser->id,
+                'receiver_id' => $user->id,
+            ]);
+        } else {
+            $authUser->following()->attach($user);
+        }
+
+
+        sendNotification(
+            $user->fcm_tokens,
+            'Someone Followed You',
+            "@{$user->username} Start Following You",
+            ['type' => 'follow', 'user_id' => $user->id]
+        );
+
         return jsonResponse(
             true,
             200,
             UserConstants::USER_HAS_BEED_FOLLOWED_SUCCESSFULLY_MESSAGE,
+        );
+    }
+
+    public function getUserFollowRequests(User $user)
+    {
+        $followRequests = $user->receivedFollowRequests()
+            ->where('status', FollowRequestStatusEnum::PENDING->value)
+            ->paginate(10);
+        $followRequests->load(['sender']);
+        // return $followRequests;
+        return jsonResponse(
+            true,
+            200,
+            UserConstants::USER_FOLLOWING_RETRIEVED_MESSAGE,
+            ['data' => PaginationResource::make(FollowRequestResource::collection($followRequests))]
+        );
+    }
+
+    public function acceptFollowRequest($followRequest)
+    {
+        $authUser = authUser();
+        if ($followRequest->receiver_id !== $authUser->id) {
+            return jsonResponse(
+                false,
+                403,
+                UserConstants::UNAUTHORIZED_MESSAGE,
+            );
+        }
+        if ($followRequest->status === FollowRequestStatusEnum::PENDING->value) {
+            $followRequest->update(['status' => FollowRequestStatusEnum::ACCEPTED->value]);
+        } else {
+            return jsonResponse(
+                false,
+                400,
+                'Operation Failed.',
+            );
+        }
+        $authUser->following()->attach($followRequest->sender_id);
+
+        sendNotification(
+            $followRequest->sender->fcm_tokens,
+            'Accept Follow Request',
+            "@{$authUser->username} Accepted Your follow Request",
+            ['type' => 'post like', 'user_id' => $authUser->id]
+        );
+
+        return jsonResponse(
+            true,
+            200,
+            UserConstants::FOLLOW_REQUEST_ACCEPTED_SUCCESSFULLY_MESSAGE,
+        );
+    }
+
+    public function rejectFollowRequest($followRequest)
+    {
+        $authUser = authUser();
+        if ($followRequest->receiver_id !== $authUser->id) {
+            return jsonResponse(
+                false,
+                403,
+                UserConstants::UNAUTHORIZED_MESSAGE,
+            );
+        }
+
+        if ($followRequest->status === FollowRequestStatusEnum::PENDING->value) {
+            $followRequest->update(['status' => FollowRequestStatusEnum::REJECTED->value]);
+        } else {
+
+            return jsonResponse(
+                false,
+                400,
+                'Operation Failed.',
+            );
+        }
+
+        return jsonResponse(
+            true,
+            200,
+            UserConstants::FOLLOW_REQUEST_REJECTED_SUCCESSFULLY_MESSAGE,
         );
     }
 
@@ -217,12 +314,5 @@ class UserService extends BaseService
             ['generated_bio' => $generatedBio]
         );
     }
-
-    // public function generateBio($request)
-    // {
-    //     $body = $request->input('body');
-    //     $prompt = "you have this post body ($body) i want you to extract all possible tags that may be related in and format the tags in array like ['tag1','tag2'] and use snake_case";
-    //     $response = $this->geminiService->generateContent($prompt);
-    //     return $response;
-    // }
 }
+

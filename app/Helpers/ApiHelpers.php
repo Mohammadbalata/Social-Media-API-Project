@@ -2,13 +2,13 @@
 
 use App\Jobs\SendFcmNotification;
 use App\Models\User;
-use App\Services\NotificationService;
 use Illuminate\Support\Facades\Auth;
 
 
 if (!function_exists('authUser')) {
-    function authUser()
+    function authUser() : ?User
     {
+        
         $user = Auth::guard('sanctum')->user();
         if (!$user) {
             return null;

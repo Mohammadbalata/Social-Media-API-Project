@@ -84,6 +84,16 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function sentfollowRequests()
+    {
+        return $this->hasMany(FollowRequest::class, 'sender_id');
+    }
+
+    public function receivedFollowRequests()
+    {
+        return $this->hasMany(FollowRequest::class, 'receiver_id');
+    }
+
     public function blockedUsers()
     {
         return $this->belongsToMany(User::class, 'blocked_users', 'user_id', 'blocked_user_id')
@@ -121,6 +131,7 @@ class User extends Authenticatable
     {
         return $this->devices()->pluck('fcm_token')->toArray();
     }
+
 
 
     public function toSearchableArray()

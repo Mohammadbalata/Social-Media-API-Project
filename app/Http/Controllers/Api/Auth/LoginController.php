@@ -8,41 +8,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
-/**
- * @OA\Post(
- *     path="/auth/login",
- *     operationId="login",
- *     tags={"Authentication"},
- *     summary="User login",
- *     description="Authenticate a user and return access token",
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(ref="#/components/schemas/LoginRequest")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Login successful",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="status", type="integer", example=200),
- *             @OA\Property(property="message", type="string", example="Login successful"),
- *             @OA\Property(property="data", ref="#/components/schemas/LoginResponse")
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Invalid credentials",
- *         @OA\JsonContent(
- *             @OA\Property(property="message", type="string", example="Invalid credentials")
- *         )
- *     ),
- *     @OA\Response(
- *         response=422,
- *         description="Validation error",
- *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
- *     )
- * )
- */
 class LoginController extends Controller
 {
 

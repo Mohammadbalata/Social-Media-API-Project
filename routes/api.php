@@ -54,6 +54,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/users/{user}/unfollow', [FollowController::class, 'unfollowUser']);
   });
 
+  Route::get('/users/{user}/followrequests', [FollowController::class, 'getUserFollowRequests']);
+  Route::post('/followrequests/{followRequest}/accept', [FollowController::class, 'acceptFollowRequest']);
+  Route::post('/followrequests/{followRequest}/reject', [FollowController::class, 'rejectFollowRequest']);
   Route::get('/users/generate-bio', [UsersController::class, 'generateBio']);
 
   // Post Routes

@@ -4,6 +4,8 @@ namespace App\Constants;
 
 class UserConstants
 {
+    public const UNAUTHORIZED_MESSAGE = 'Unauthorized action.';
+
     public const USER_PROFILE_RETRIEVED_MESSAGE = 'User profile retrieved successfully.';
     public const USER_PROFILE_UPDATED_MESSAGE = 'User profile updated successfully.';
     public const USER_POSTS_RETRIEVED_MESSAGE = 'User posts retrieved successfully.';
@@ -12,7 +14,9 @@ class UserConstants
 
     public const USER_FOLLOW_YOURSELF_ERROR_MESSAGE = 'You cannot follow yourself.';
     public const USER_ALREADY_FOLLOWED_ERROR_MESSAGE = 'You are already following this user.';
-    public const USER_HAS_BEED_FOLLOWED_SUCCESSFULLY_MESSAGE = 'User has been followed successfully';
+    public const USER_HAS_BEED_FOLLOWED_SUCCESSFULLY_MESSAGE = 'Follow request sent successfully.';
+    public const FOLLOW_REQUEST_ACCEPTED_SUCCESSFULLY_MESSAGE = 'Follow request accepted successfully.';
+    public const FOLLOW_REQUEST_REJECTED_SUCCESSFULLY_MESSAGE = 'Follow request rejected successfully.';
 
     public const USER_UNFOLLOW_YOURSELF_ERROR_MESSAGE = 'You cannot unfollow yourself.';
     public const USER_ALREADY_UNFOLLOWED_ERROR_MESSAGE = 'You are not following this user.';

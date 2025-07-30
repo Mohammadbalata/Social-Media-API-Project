@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Constants\PostConstants;
-use App\Events\ModelLiked;
 use App\Http\Requests\PostRequest;
 use App\Http\Resources\PostResource;
 use App\Repositories\Eloquent\PostRepository;
@@ -104,12 +103,11 @@ class PostService extends BaseService
 
         $post->likedBy($user);
         // Dispatch the event to notify the user about the new like
-        ModelLiked::dispatch($user, $post);
 
         if ($post->user->id !== $user->id) {
             sendNotification(
                 $post->user->fcm_tokens,
-                'Someone Has liked Your Post',
+                'Someone liked Your Post',
                 "@{$user->username} Liked Your Post",
                 ['type' => 'post like', 'user_id' => $user->id]
             );
@@ -144,7 +142,6 @@ class PostService extends BaseService
     }
     public function pinPost($post)
     {
-
         $user = authUser();
         if ($user->id !== $post->user_id) {
             return jsonResponse(

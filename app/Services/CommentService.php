@@ -3,11 +3,7 @@
 namespace App\Services;
 
 use App\Constants\CommentConstants;
-use App\Events\CommentCreated;
-use App\Events\ModelLiked;
 use App\Http\Resources\CommentResource;
-use App\Repositories\CommentRepository;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
  
 class CommentService extends BaseService
@@ -27,9 +23,16 @@ class CommentService extends BaseService
             $uplode = $this->mediaService->handleMediaUpload($request->file('media'), $comment);
         }
         
-        // CommentCreated::dispatch($user, $comment);
-        
+        if ($post->user->id !== $user->id) {
+            sendNotification(
+                $post->user->fcm_tokens,
+                'Someone Added A Comment To Your Post',
+                "@{$user->username} Added Comment To Your Post",
+                ['type' => 'comment adding', 'user_id' => $user->id]
+            );
+        }
 
+        
         $comment->load('media','mentionedUsers:id,username');
         $comment->loadCount('likes');
         
@@ -101,7 +104,6 @@ class CommentService extends BaseService
             ], 400);
         }
         $comment->likedBy($user);
-        ModelLiked::dispatch($user, $comment);
 
         return response()->json([
             'message' => CommentConstants::LIKED_COMMENT_MESSAGE,
