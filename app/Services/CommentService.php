@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Constants\CommentConstants;
+use App\Enum\NotificationTypeEnum;
 use App\Http\Resources\CommentResource;
+use App\Models\Comment;
 use Illuminate\Support\Facades\Auth;
- 
+
 class CommentService extends BaseService
 {
     public function __construct(protected MediaService $mediaService) {}
@@ -22,34 +24,38 @@ class CommentService extends BaseService
         if ($request->has('media')) {
             $uplode = $this->mediaService->handleMediaUpload($request->file('media'), $comment);
         }
-        
+
         if ($post->user->id !== $user->id) {
             sendNotification(
                 $post->user->fcm_tokens,
                 'Someone Added A Comment To Your Post',
                 "@{$user->username} Added Comment To Your Post",
-                ['type' => 'comment adding', 'user_id' => $user->id]
+                [
+                    'type' => NotificationTypeEnum::COMMENT->value,
+                    'model_id' => $comment->id,
+                    'model_type' => Comment::class,
+                    'sender_id' => $user->id,
+                    'receiver_id' => $post->user->id,
+                ]
             );
         }
 
-        
-        $comment->load('media','mentionedUsers:id,username');
+
+        $comment->load('media', 'mentionedUsers:id,username');
         $comment->loadCount('likes');
-        
+
         return response()->json([
             'message' => CommentConstants::COMMENT_CREATE_MESSAGE,
             'data' => CommentResource::make($comment)
         ], 201);
-       
     }
 
     public function getPostComments($post)
     {
         $comments = $post->comments()->paginate(8);
         $comments->loadCount('replies');
-        
-        return CommentResource::collection($comments);
 
+        return CommentResource::collection($comments);
     }
 
     public function updateComment($request, $comment)
@@ -60,12 +66,11 @@ class CommentService extends BaseService
         }
 
         $comment->update($request->validated());
-        $comment->load('media','replies');
+        $comment->load('media', 'replies');
         return response()->json([
             'message' => CommentConstants::COMMENT_UPDATE_MESSAGE,
             'data' => CommentResource::make($comment)
         ], 200);
-
     }
 
     public function deleteComment($comment)
@@ -76,7 +81,7 @@ class CommentService extends BaseService
         }
 
         $comment->delete();
-       
+
         return response()->json([
             'message' => CommentConstants::COMMENT_DESTROY_MESSAGE,
         ], 200);
@@ -84,7 +89,7 @@ class CommentService extends BaseService
 
     public function getComment($comment)
     {
-        $comment->load('media','replies');
+        $comment->load('media', 'replies');
         $comment->loadCount('replies');
 
         return $this->success(
@@ -109,7 +114,6 @@ class CommentService extends BaseService
             'message' => CommentConstants::LIKED_COMMENT_MESSAGE,
             'likes_count' => $comment->fresh()->likes_count,
         ], 200);
-        
     }
 
     public function unlikeComment($comment)
@@ -136,7 +140,7 @@ class CommentService extends BaseService
             'content' => $request->input('content'),
             'post_id' => $rootPost->id,
         ]);
-        
+
         if ($request->has('media')) {
             $uplode = $this->mediaService->handleMediaUpload($request->file('media'), $reply);
         }

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Comments\CommentReplyController;
 use App\Http\Controllers\Api\Comments\CommentsController;
 use App\Http\Controllers\Api\Comments\LikeCommentController;
 use App\Http\Controllers\Api\HomePageController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Posts\PostInteractionsController;
 use App\Http\Controllers\Api\Posts\PostCommentController;
 use App\Http\Controllers\Api\Posts\PostsController;
@@ -82,8 +83,12 @@ Route::middleware('auth:sanctum')->group(function () {
   });
   Route::put('/comments/{comment}', [CommentsController::class, 'updateComment']);
   Route::delete('/comments/{comment}', [CommentsController::class, 'deleteComment']);
-
   Route::post('/comments/{comment}/reply', [CommentReplyController::class, 'replyToComment']);
+
+  // Notification Routes
+  Route::get("/notifications", [NotificationController::class, 'index']);
+  Route::post("/notifications/{id}/read", [NotificationController::class, 'markAsRead']);
+  Route::post("/notifications/read-all", [NotificationController::class, 'markAllAsRead']);
 });
 
 Route::get('/send-dummy-notification', function () {

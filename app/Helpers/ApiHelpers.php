@@ -1,14 +1,15 @@
 <?php
 
 use App\Jobs\SendFcmNotification;
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 
 if (!function_exists('authUser')) {
-    function authUser() : ?User
+    function authUser(): ?User
     {
-        
+
         $user = Auth::guard('sanctum')->user();
         if (!$user) {
             return null;
@@ -31,8 +32,15 @@ if (!function_exists("jsonResponse")) {
 
 
 if (!function_exists('sendNotification')) {
-    function sendNotification(array|string $recipients, string $title, string $body, array $data): void
+    function sendNotification(array|string $recipients, string $title, string $body, array $data, $saveNotification = true): void
     {
+        if (!$saveNotification) {
+            Notification::create([
+                "title" => $title,
+                "body" => $body,
+                ...$data
+            ]);
+        }
         SendFcmNotification::dispatch($recipients, $title, $body, $data);
     }
 }

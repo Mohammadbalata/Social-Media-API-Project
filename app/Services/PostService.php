@@ -3,8 +3,11 @@
 namespace App\Services;
 
 use App\Constants\PostConstants;
+use App\Enum\NotificationTypeEnum;
 use App\Http\Requests\PostRequest;
 use App\Http\Resources\PostResource;
+use App\Models\Post;
+use App\Models\User;
 use App\Repositories\Eloquent\PostRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -109,7 +112,14 @@ class PostService extends BaseService
                 $post->user->fcm_tokens,
                 'Someone liked Your Post',
                 "@{$user->username} Liked Your Post",
-                ['type' => 'post like', 'user_id' => $user->id]
+                [
+                    'type' => NotificationTypeEnum::POST_LIKE->value,
+                    'model_id' => $post->id,
+                    'model_type' => Post::class,
+                    'sender_id' => $user->id,
+                    'receiver_id' => $post->user->id,
+                ]
+
             );
         }
 

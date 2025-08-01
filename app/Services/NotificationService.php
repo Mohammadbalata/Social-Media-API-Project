@@ -11,20 +11,8 @@ class  NotificationService
         private FirebaseService $firebaseService
     ) {}
 
-    public function send(array|string $recipients, string $title, string $body, array $data, $saveNotification = true): void
+    public function send(array|string $recipients, string $title, string $body, array $data): void
     {
-        // Store notification in database
-        if (!$saveNotification) {
-            return;
-        }
-
-        // Notification::create([
-        //     "title" => $title,
-        //     "body" => $body,
-        //     ...$data
-        // ]);
-
-
         $message = $this->prepareMessage($title, $body, $data);
         $this->sendFirebaseNotification($recipients, $message);
     }

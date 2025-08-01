@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Constants\UserConstants;
 use App\Enum\FollowRequestStatusEnum;
+use App\Enum\NotificationTypeEnum;
 use App\Http\Resources\FollowRequestResource;
 use App\Http\Resources\PaginationResource;
 use App\Http\Resources\ProfileResource;
@@ -119,7 +120,13 @@ class UserService extends BaseService
             $user->fcm_tokens,
             'Someone Followed You',
             "@{$user->username} Start Following You",
-            ['type' => 'follow', 'user_id' => $user->id]
+            [
+                  'type' => NotificationTypeEnum::FOLLOW_REQUEST->value,
+                    'model_id' => $user->id,
+                    'model_type' => User::class,
+                    'sender_id' => $authUser->id,
+                    'receiver_id' => $user->id,
+            ]
         );
 
         return jsonResponse(
@@ -169,7 +176,13 @@ class UserService extends BaseService
             $followRequest->sender->fcm_tokens,
             'Accept Follow Request',
             "@{$authUser->username} Accepted Your follow Request",
-            ['type' => 'post like', 'user_id' => $authUser->id]
+            [
+                'type' => NotificationTypeEnum::FOLLOW_REQUEST_ACCEPTED->value,
+                'model_id' => $authUser->id,
+                'model_type' => User::class,
+                'sender_id' => $authUser->id,
+                'receiver_id' => $followRequest->sender_id,
+            ]
         );
 
         return jsonResponse(
